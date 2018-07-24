@@ -1,0 +1,21 @@
+set terminal postscript size 4,2.5 eps font 'Courier' color
+set output "pt_n.eps"
+set style line 1 lt 1 lw 3 pt 0 ps 0 lc rgb "red"
+set style line 2 lt 2 lw 6 pt 0 ps 0 lc rgb "green"
+set style line 3 lt 0 lw 6 pt 1 ps 1.5 lc rgb "blue"
+set style line 4 lt 0 lw 6 pt 6 ps 1.5 lc rgb "magenta"
+set style line 5 lt 0 lw 6 pt 2 ps 1.5 lc rgb "#404040"
+set grid
+set key right bottom inside nobox
+set xrange [0:22]
+set yrange [0:1.05]
+set xlabel 'Generation'
+set ylabel 'Proportion of Correct Sets'
+plot \
+'pt_n.txt' u 1:5 w lp ls 1 t "Theorem", \
+'pt_n.txt' u 1:4 ls 3 t "n=1600", \
+'pt_n.txt' u 1:3 ls 4 t "n=400", \
+'pt_n.txt' u 1:2 ls 5 t "n=100"
+
+set output
+set term wxt

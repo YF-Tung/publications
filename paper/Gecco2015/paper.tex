@@ -1,0 +1,1593 @@
+\documentclass{sig-alternate}
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage{pgfplots}
+%\usepackage{algorithm}
+\usepackage[ruled,vlined]{algorithm2e}
+\usepackage{algpseudocode}
+%\usepackage{acmcopyright}
+
+\renewcommand{\algorithmicrequire}{\textbf{Input:}}  % Use Input in the format of Algorithm
+\renewcommand{\algorithmicensure}{\textbf{Output:}} % Use Output in the format of Algorithm
+%\newdef{definition}{Definition}
+\newtheorem{definition}{Definition}
+\renewcommand{\thefootnote}{\fnsymbol{footnote}}
+
+%\makeatletter
+%\newcommand*{\myfnsymbolsingle}[1]{%
+%    \ensuremath{%
+%	\ifcase#1% 0
+%%	    \or % 1
+%%	    *%   
+%	    \or % 2
+%	    \dagger
+%	    \or % 3  
+%	    \ddagger
+%	    \or % 4   
+%	    \mathsection
+%	    \or % 5
+%	    \mathparagraph
+%	    \else % >= 6
+%	    \@ctrerr  
+%	    \fi
+%    }%   
+%}   
+%\makeatother
+%
+%\newcommand*{\myfnsymbol}[1]{%
+%    \myfnsymbolsingle{\value{#1}}%
+%}
+%
+%% remove upper boundary by multiplying the symbols if needed
+%\usepackage{alphalph}
+%\newalphalph{\myfnsymbolmult}[mult]{\myfnsymbolsingle}{}
+%
+%\renewcommand*{\thefootnote}{%
+%    \myfnsymbolmult{\value{footnote}}%
+%}
+
+\begin{document}
+
+\setcopyright{acmcopyright}
+\conferenceinfo{GECCO '15,}{July 11 - 15, 2015, Madrid, Spain}
+\isbn{978-1-4503-3472-3/15/07}\acmPrice{\$15.00}
+
+\doi{http://dx.doi.org/10.1145/2739480.2754685}
+%\setcopyright{acmcopyright}
+%\conferenceinfo{GECCO '15,}{July 11 - 15, 2015, Madrid, Spain}
+%\isbn{978-1-4503-3472-3/15/07}\acmPrice{\$15.00}
+%
+%\doi{http://dx.doi.org/10.1145/2739480.2754685}
+%
+%
+%    \conferenceinfo{GECCO'15,} {July 11-15, 2015, Madrid, Spain.}
+%    \CopyrightYear{2015}
+%    \crdata{TBA}
+    \clubpenalty=10000
+    \widowpenalty = 10000
+
+\title{Theoretical Perspective of Convergence Complexity of Evolutionary Algorithms Adopting Optimal Mixing}
+
+\numberofauthors{2}
+\author{
+% 1st. author
+\alignauthor
+Yu-Fan Tung\\
+       \affaddr{Taiwan Evolutionary Intelligence Laboratory}\\
+       \affaddr{Department of Electrical Engineering}\\
+       \affaddr{National Taiwan University}\\
+       \email{r02921044@ntu.edu.tw}
+% 2nd. author
+\alignauthor
+Tian-Li Yu\\
+       \affaddr{Taiwan Evolutionary Intelligence Laboratory}\\
+       \affaddr{Department of Electrical Engineering}\\
+       \affaddr{National Taiwan University}\\
+       \email{tianliyu@ntu.edu.tw}
+}
+%\date{14 November 2014}
+\date{\today}
+
+\maketitle
+\begin{abstract}
+
+The optimal mixing evolutionary algorithms (OMEAs) have recently drawn much attention for their robustness, small size of required population, and efficiency in terms of number of function evaluations (NFE).
+In this paper, the performances and behaviors of convergence in OMEAs are studied by investigating the mechanism of optimal mixing (OM), the variation operator in OMEAs, under two scenarios---one-layer and two-layer masks.
+For the case of one-layer masks, the required population size is derived from the viewpoint of initial supply, while the convergence time is derived by analyzing the progress of sub-solution growth.
+NFE is then asymptotically bounded with rational probability by estimating the probability of performing evaluations.
+For the case of two-layer masks, empirical results indicate that the required population size is proportional to both the degree of cross competition and the results from the one-layer-mask case.
+%We also find that when applying disjoint masks corresponding to the problem structure,
+%the supply model is a good estimator compared to other population-sizing models,
+%the selection pressure imposed by OM makes the subproblem structure insignificant in terms of NFE,
+%and the required population size for two-layer masks increases when the reverse-growth probability does.
+The derived models also indicate that population sizing is decided by initial supply when disjoint masks are adopted,
+that the high selection pressure imposed by OM makes the composition of sub-problems impact little on NFE,
+and that the population size requirement for two-layer masks increases with the reverse-growth probability.
+
+\end{abstract}
+
+\category{F.2.m}{Analysis of Algorithms and Problem Complexity}{Miscellaneous}
+%\category{G.1.6}{Numerical Analysis}{Optimization}[Global optimization]
+\category{I.2.8}{Artificial Intelligence}{Problem Solving, Control Methods, and Search}[Heuristic methods]
+
+% A category with the (minimum) three required fields
+%\category{H.4}{Information Systems Applications}{Miscellaneous}
+%A category including the fourth, optional field follows...
+%\category{D.2.8}{Software Engineering}
+%{Metrics}[complexity measures, performance measures]
+
+\terms{Experimentation, Performance, Theory}
+
+\keywords{
+Optimal Mixing;
+%Evolutionary Algorithms,
+Convergence Complexity;
+Population Sizing;
+Convergence Time;
+Number of Function Evaluations}
+
+%% Chapter 1
+\section{Introduction}
+\label{sec:introduction}
+
+The importance of convergence analysis of evolutionary algorithms cannot be overemphasized.
+Without theoretical support, the empirical findings cannot be generalized,
+and the development of new mechanism lacks direction.
+However, due to the stochastic nature, the analyses of evolutionary algorithms (EAs)  are difficult,
+and hence are either inaccurate and incomplete or come much later than the debut of the algorithm.
+For example, the concept of the simple GA was proposed around the late 1960s.
+Accurate facet-wise models for the population sizing and the convergence time were not proposed until the late 1990s~\cite{1992_Goldberg, 1993_Thierens, 1993_BGA, 1999_Gamblers, 2001_Supply}.
+Similarly, the technique of model building in estimation of distribution algorithms (EDAs) has been developed since the late 1990s,
+and complexity analysis of model building, the kernel of EDA, appeared in the field about ten years later~\cite{2002_Pelikan, 2007_Yu}.
+
+Recently, the optimal mixing operator (OM), proposed by Thierens and Bosman,
+has drawn much attention for its robustness and performance~\cite{2012_LN_OM_FI, 2013_Hier}.
+Utilizing the intermediate results during variation, mixing with OM is considered noise-free decision making, which greatly reduces the required population size and boosts the performance.
+The performance of OM significantly depends on the linkage sets~\cite{2012_LN_OM_FI,2012_Goldman}.
+Recent researches involve using the CP index~\cite{2014_CP} and filtering/combining linkage hierarchies~\cite{2013_Filtering} to decide whether a given mask is promising during optimization.
+However, those techniques have been developed with little theoretic support.
+
+%Recently, a novel recombination operator, the optimal mixing (OM) operator, has drawn much attention for its robustness and performance~\cite{2012_LN_OM_FI, 2013_Hier}.
+%Thierens and Bosman proposed OM as the variation operator adopted in the LTGA family~\cite{2011_OMEA}.
+%Utilizing the intermediate results during variation, mixing with OM is considered noise-free decision making, which greatly reduces the required population size and boost the performance.
+%Previous results also shows that performance significantly depends on the linkage sets utilized by OM.
+%Recent researches involve using the CP index~\cite{2014_CP} and filtering/combining linkage hierarchies~\cite{2013_Filtering} to see whether a given mask is promising during optimization.
+%Techniques have been developed with little theoretic support.
+
+%Evolutionary algorithms (EAs) have been adopted as solutions to
+%optimization problems for long, especially in black-box optimization settings.
+%Although EAs are popular in real-world applications, 
+%the performance of EAs is usually analyzed only based on empirical results.
+%Theoretical models are often proposed much later.
+%Take the example of the genetic algorithm (GA).
+%GA was proposed in the 1970s,
+%%but theoretical analysis is not complete until 2001 with a research about population sizing~\cite{2001_Supply}.
+%but theoretical analysis was not complete until 2001~\cite{1992_Goldberg, 1993_Thierens, 1999_Gamblers, 2001_Supply}.
+%Another example is the estimation of distribution algorithms (EDAs),
+%which are proposed in the 1990s.
+%The models for the Bayesian optimization algorithm (BOA) as well as other EDAs are proposed in 2002~\cite{2002_Pelikan},
+%and the population-sizing model for general entropy-based EDAs is proposed in 2007~\cite{2007_Yu}.
+%Deriving theoretical models for EAs may not be easy, since EAs are stochastic algorithms.
+%Some analyses, like best-case and worst-case analyses, cannot directly be conducted on EAs.
+%This may be the reason that the development of EA theories is considered slower than empirical studies.
+%%Although empirical results are sufficient for applications,
+%
+%There are several reasons for deriving theoretical models.
+%First, models derived by analyzing the mechanism of optimization are independent of problems,
+%while empirical results depend on the benchmarks.
+%Those results based on observation of known problems
+%are not likely to fit well on unknown irregular problems, which are mainly the targets of EAs.
+%Second, knowledge of theoretical complexities and optimization mechanisms facilitates the development of EAs.
+%%In the framework of general EAs,
+%Many operators have been proposed for selection and variation in EAs.
+%Instead of simply compare them quantitatively, knowing the mechanisms help distinguish the strengths and weakness of them,
+%which also helps develop innovative algorithms.
+%For example, required population is larger to make correct decision~\cite{1992_Goldberg}
+%than to ensure sufficient supply~\cite{2001_Supply}.
+%The optimal mixing operator greatly reduces the demand of population size, 
+%since the operator is noise-free and not bounded by decision-making models.
+%%For example, some operators are suitable for solving problems with overlapping structures.
+%Third, existing models can be foundations of more accurate models.
+%Some facetwise models may seem not accurate at first,
+%but combinations of them yields good results.
+%For instance, the gambler's ruin model~\cite{1999_Gamblers}
+%is a successive combination of supply models and decision models. 
+
+
+%Although EAs are known for their robustness and potential,
+%novice users may still be struggling when adopting them.
+%First, determining the size of population is a critical issue.
+%While smaller population often leads to low quality of solutions,
+%using population with too large size may result in inefficient computation,
+%gaining the cost of finding optimum.
+%Second, the complexity of variants of EAs are not all well studied.
+%For black-box optimization, no partial evaluation is allowed.
+%Thus the cost of an algorithm is usually measured
+%by number of function evaluations (NFE).
+%Many innovative algorithms were proposed,
+%but only empirical results of cost complexity are studied on most of them.
+%Ignorance of complexity may make users hesitate about adopting these algorithms.
+
+%Among all branches of EAs, the genetic algorithms (GA)~\cite{1975_Holland}
+%have drawn a lot of attention.
+%To estimate the required size of population, several model have been introduced.
+%Goldberg~{\it et~al}.~\cite{2001_Supply} have proposed one from the viewpoint of supply.
+%Thierens and Goldberg~\cite{1994_Thierens} have proposed an approximation of convergence time.
+%Combination of these facetwise models leads to the model of required NFE.
+%These models give researchers many insights on studies of many variants of EAs.
+
+The goal of this paper is to analyze the convergence complexity of EAs adopting OM,
+also called OMEAs, when various linkage models are adopted.
+In particular, we focus on deriving analytical models for
+the required population size, the convergence time, and the number of function evaluations (NFE).
+%
+%Many variants of OMEA are proposed,
+%and one of them called GOMEA~\cite{2011_OMEA} most suits our study since we use the probabilistic model.
+%
+Among many OMEAs, the analyses in this paper suit best the scenario of GOMEA~\cite{2011_OMEA}
+since our study heavily uses probabilistic models.
+
+%Optimal mixing operators utilize intermediate function evaluations to ensure that fitness grows monotonically.
+%For the promising performance and robustness of OMEAs~\cite{2012_LN_OM_FI, 2013_Hier},
+%many variants have then been proposed, but the varation operator is the same, the optimal mixing operator.
+%Many variants of OMEAs exist, but the adopted variation operator is the same.
+%Therefore although we conduct experiments only on one variant called GOMEA,
+%our results can be applied to all EAs adopting the operator.
+
+%In this paper, we focus on a mixing operator in EAs.
+%Successful design of mixing operator of EA involves two aspects.
+%Partial solutions from different instances should be juxtaposed sufficiently,
+%while variables in a partial solution should not be separated during mixing.
+%Linkage learning is a process of finding which variables should be treated dependently during mixing.
+%In 2010, Thierens proposed the linkage tree genetic algorithm (LTGA)~\cite{2010_LTGA},
+%which detects the linkage relations in a hierarchical manner,
+%and builds linkage trees utilizing the linkage information.
+%%The step of building linkage trees makes the LTGA fall into the category of model-building GAs.
+%In 2011, the ROMEA and the GOMEA, two variants of the LTGA, were proposed~\cite{2011_OMEA}.
+%One of the difference between them and the canonical LTGA is a technique named optimal mixing (OM).
+%Acting as the variation operator, OM significantly reduces the required population size and NFE.
+%Some results~\cite{2012_LN_OM_FI, 2013_Hier} indicate these variants are robust and scalable on many problems.
+%Specifically, the authors of LTGA have concluded that the GOMEA with linkage-tree learning is the new version of the LTGA,
+%because the improvement in required population size, computing time, and number of function evaluations.
+%In this paper, the performance and complexity of EAs adopting OM are analyzed.
+%Specifically, we focus on gene-pool optimal mixing as the operator of OM,
+%because it outperforms other variation operators.
+
+For the rest of this paper, the background is first briefly introduced in Section~\ref{sec:relatedWorks}.
+%and the algorithms and notations are introduced in Section~\ref{sec:algorithmsAndNotations}.
+In the scenario of one-layer masks, complexity models are proposed in Section~\ref{sec:nonOverlappingMasks}.
+The results are then extended to two-layer masks in Section~\ref{sec:twoLayerNonOverlappingMasks},
+followed by conclusion.
+%Finally, from the observations and discussions above,
+%we conclude with a brief summary and suggestions for future works.
+%Finally, the theoretical size of required population,
+%convergence time, and number of function evaluations are derived and verified
+%with experiments, and our conclusion follows.
+
+%% Chapter 2
+\section{Background}
+\label{sec:relatedWorks}
+
+In this section, background knowledge of this paper is provided.
+Since the behavior of OMEAs depends on the linkage sets,
+we first formally define the family of subsets and the associated notations.
+Using the notations, the test problems used in this paper are then described.
+%Following the definitions and notations,
+%we introduce the framework of GOMEA,
+%which is our research subject.
+We then give a brief introduction to GOMEA, which is the research scenario of this paper.
+%In addition, we introduced a previous population-sizing model,
+%which is highly related to our results.
+Finally, since the concept of initial supply is highly related to our work, it is also addressed.
+
+%The general process of EA include several steps.
+%For a given fitness function, the EA aims to find a solution with high fitness.
+%First, candidate solutions are encoded as $\chi$-ary variable strings,
+%which are called chromosomes.
+%Next, a set of chromosomes are generated as the initial population.
+%Then during the process of EA, the population evolves iteratively.
+%In each iteration, some of the population are selected,
+%juxtaposed, and used to produce new chromosomes,
+%which replace the population then.
+%These iterations are called generations.
+%Finally, the population should converge to the desired result.
+%To juxtapose the solutions,
+%various types of variation operators can be adopted.
+%The optimal mixing evolutionary algorithms (OMEA)~\cite{2011_OMEA}
+%utilizes the OM operator in the variation step.
+%
+%Many researches have been done on the difficulty of EAs.
+%Those results cannot be directly applied to our scenario,
+%but similar methods and thoughts can be used.
+%Some of them are briefly described below.
+
+%Facetwise models have been proposed to estimate the complexity.
+%From the models, we can understand the mechanisms of EAs,
+%and design new algorithms by identifying and conquering
+%the bottleneck of complexity.
+
+
+%\section{Algorithms and Notations}
+%\label{sec:algorithmsAndNotations}
+\subsection{Family of Subsets}
+
+In OMEAs, variables are mixed according to linkage sets
+to ensure adequate mixing while preventing loss of promising partial solutions.
+The family of subsets~\cite{2010_LTGA}, denoted by $\mathcal F$, is a general model of linkage sets.
+Before defining the FOS we introduce the necessary notations.
+%In the process of EA, certain number of candidate solutions are kept as the population.
+%The candidates are called chromosomes, and each of them contains $\ell$ variables.
+We denote the length of chromosome by $\ell$, and the population size by $n$.
+%Those variables are also called genes.
+Variables in one chromosome, also called genes, can be expressed in a vector $\vec{x} = \langle x_1, \dots, x_\ell\rangle$.
+%Genes can be expressed in a vector $\vec{x}$.
+%In this paper, the operator $|\ |$ over a vector denotes the number of elements in the vector.
+The notation $|{\vec x}|$ denotes the number of elements in $\vec x$.
+%Therefore we have $|\vec{x}| = \ell$,
+The natural number set is denoted by $\mathbb N$.
+Using these notations the FOS is defined as follows.
+%The indexes of them forms a set, which is $S=\{1,2,\dots,\ell$\}.
+%Subsets of $S$ are called masks.
+
+\begin{definition}
+For any integer $\ell\in{\mathbb N}$, $S_\ell$ is an {\bf index set} which consists of all integers from $1$ to $\ell$.
+Subsets of $S_\ell$ are called {\bf masks}.
+%A subset of the index set is a {\bf mask}.
+\begin{equation*}
+%S_\ell = \{i\in{\mathbb N}|1\leq i\leq \ell\}.
+S_\ell = \{ 1, 2, \dots, \ell\}.
+\end{equation*}
+\end{definition}
+
+\begin{definition}
+For an index set $S_\ell$, $\mathcal F$ is a {\bf{family of subsets (FOS)}} with the following two properties.
+\begin{enumerate}
+
+\item $\mathcal F$ is an ordered set consisting of masks.
+\begin{equation*}
+\begin{split}
+{\mathcal F} = \langle {\mathbf F}^1, &{\mathbf F}^2, \dots, {\mathbf F}^{|{\mathcal F}|}\rangle,\\
+\text{where } {\mathbf F}^i &\subseteq S_\ell, 1\leq i \leq |{\mathcal F}|.
+\end{split}
+\end{equation*}
+
+%\item Every element in $S_\ell$ must be contained in at least one of the masks in $\mathcal F$.
+\item The union of all masks in $\mathcal F$ is the index set.
+\end{enumerate}
+\begin{equation*}
+%\forall i \in S_\ell, \exists {\mathbf F}^j \in {\mathcal F}: i \in {\mathbf F}^j.
+\bigcup\nolimits_{{\mathbf F}^i \in {\mathcal F}} {\mathbf F}^i = S_\ell.
+\end{equation*}
+\end{definition}
+
+%For example, take $\ell = 3$.
+Take $\ell = 3$ as an example.
+The index set $S_3 = \{1,2,3\}$.
+Sets such as $\{1\}$, $\{2,3\}$, and $\{1,2,3\}$ are all masks of $S_3$.
+$\langle\{1,2\},\{2,3\}\rangle$, $\langle\{2,3\},\{1,2\}\rangle$, and $\langle\{1,2\},\{2,3\},\{1,2\}\rangle$ are three different FOSs of $S_3$.
+$\langle \{1,2\},\{2\}\rangle $ is not a valid FOS of $S_3$, since no mask contains $3$.
+Note that the masks in FOS are in order, and there may be duplicated masks.
+
+%The FOS is an ordered set consists of some masks, so it is an ordered subset of the superset of $S$.
+%In addition, every index should be contained in at least one mask in any legal FOS.
+%Thus an FOS can be written by ${\mathcal F} = <{\mathbf F}^1, {\mathbf F}^2, \dots, {\mathbf F}^{|{\mathcal F}|}>$,
+%${\mathbf F}^i \subseteq S, i \in \{1,2,\dots,|{\mathcal F}|\}$,
+%with the constraint that $\forall i \in S, \exists j$ such that $i \in {\mathbf F}^j$.
+
+%A mask is a set consisting of certain variables with regarding to the indexes.
+%During optimal mixing, %the information of variables is exchanged with regarding to the variable indexes.
+%information on the variables indicated by the masks is exchanged.
+%These operations can be viewed as variable-wise mask operations.
+%Therefore, the sets containing the variable indexes are called masks.
+%For a chromosome $C$, the variables with indexes contained in a mask $M$ are denoted by $C_M$.
+
+During OM, variables are mixed
+according to the elements in FOS.
+The operation can be viewed as a variable-wise mask operation,
+so elements in FOS are called masks.
+For a chromosome $C$, the variables selected according to a mask $M$ are denoted by $C_M$.
+
+Some special FOSs are further defined as follows.
+%We further denote some specific FOSs by the symbols defined below.
+%These notations will be frequently used in the following context.
+
+\begin{definition}
+For an index set $S_\ell$ and an integer $k$ dividing $\ell$,
+a {\bf{homogeneous FOS}} ${\mathcal F}_k$ is defined as
+\begin{equation*}
+{\mathcal F}_k = \langle{\mathbf F}^1, {\mathbf F}^2, \dots, {\mathbf F}^{\ell / k}\rangle,
+\end{equation*}
+\begin{equation*}
+%\text{where } {\mathbf F}^i = \{i\cdot k-k+1, i\cdot k-k+2, \dots, i\cdot k\}
+%\text{where } {\mathbf F}^i = \{\pi_{i\cdot k-k+1}, \pi_{i\cdot k-k+2}, \dots, \pi_{i\cdot k}\}
+\text{where } {\mathbf F}^i = \{\pi_j | \left(i-1\right)\cdot k < j \leq i\cdot k \}.
+\end{equation*}
+\end{definition}
+
+$\vec{\pi} = \langle\pi_1, \pi_2, \dots, \pi_\ell\rangle$ can be any permutation of the index set $S_\ell$.
+In other words, ${\mathcal F}_k$ is an FOS consisting of $\ell/k$ disjoint masks, and every mask contains $k$ indexes.
+Since the locations of variables should not affect the behavior of optimization,
+we use the permutation notation to eliminate the dependency of variable locations.
+
+\begin{definition}\label{def:catFOS}
+The {\bf{concatenated homogeneous FOS}} can be defined below.
+\begin{equation*}
+{\mathcal F}_{k_1, \dots, k_a} = {\mathcal F}_{k_1} \parallel {\mathcal F}_{k_2} \parallel \dots \parallel {\mathcal F}_{k_a},
+\end{equation*}
+where $\parallel$ is the concatenation operator, which concatenates the elements in the sets while preserving the order.
+\end{definition}
+
+Take the case $\ell = 6$ as an example.
+$\langle \{1, 5\}, \{2, 4\}, \{3, 6\}\rangle $, 
+$\langle \{2, 4, 5\}, \{1, 3, 6\}\rangle $, and
+$\langle \{1, 2, 3, 4, 5, 6\}\rangle $
+are three valid homogeneous FOSs.
+They can be denoted by ${\mathcal F}_2$, ${\mathcal F}_3$, and ${\mathcal F}_6$ respectively.
+A valid concatenation of them is
+${\mathcal F}_{3,6,2}=\langle \{2,4,5\},\{1,3,6\},\{1,2,3,4,5,6\},\{1,5\},\{2,4\},\{3,6\}\rangle $.
+
+\subsection{Test Problems}
+The analyses and experiments are based on three maximization problems.
+%We consider optimization is successful if and only if it finds the global optimum.
+By successful optimization we mean that the global optimum is found.
+The first problem is onemax:
+\begin{equation*}
+%f_{onemax}\left({\vec{x}}\right)=\sum\limits_{i=1}^\ell x_i
+f_{onemax}\left({\vec{x}}\right)=u\left({\vec x}\right),
+\end{equation*}
+where $u\left({\vec x}\right)$ is the number of $1$s in $\vec x$.
+%Apparently the global optimum of onemax is all $1$s.
+Onemax is trivial, but optimization performance on onemax
+indicates how well an algorithm deals with fully separable problems.
+
+The second problem is one instance of the Royal Road functions~\cite{1992_RR},
+the structure of which can be characterized by an FOS $\mathcal F$:
+\begin{equation}
+\label{eq:RR}
+%f_{royal}\left(\vec{x}\right) = \sum_{\forall {\mathbf F}^i \in {\mathcal F}} R\left(\vec{x}_{{\mathbf F}^i}\right),
+f_{royal}\left(\vec{x}\right) = \sum_{\forall {\mathbf F}^i \in {\mathcal F}} R\left(\vec{x}_{{\mathbf F}^i}\right),
+\end{equation}
+where
+\begin{equation*}
+R\left(\vec{x}\right) = 
+\left\{
+\begin{array}{l l}
+1 & \text{if }u\left({\vec x}\right)=|{\vec x}|, \\ %\text{if all bits in $\vec{x}$ are $1$s},\\
+0 & \text{otherwise}.
+\end{array}
+\right.
+\end{equation*}
+%We use $\vec{x}_{\mathbf F}$ to denote a vector consisting of the variables from $\vec x$ indicated by a mask $\mathbf F$,
+Note that $\vec{x}_{\mathbf F}$ is the part of $\vec x$ indicated by a mask $\mathbf F$,
+and $|\vec x|$ denotes the numbers of elements in $\vec x$.
+%and the function $u\left({\vec x}\right)$ means the number of $1$s in $\vec x$.
+%$|\vec{x}|$ represents the number of variables in $\vec{x}$.
+Motivation of using the Royal Road function is introduced in Section~\ref{sec:nfe}.
+
+The third problem is the deceptive-trap problem~\cite{1992_trap}, which can also be characterized by an FOS $\mathcal F$:
+\begin{equation*}
+f_{trap}\left(\vec{x}\right) = \sum_{\forall {\mathbf F}^i \in {\mathcal F}} T\left(\vec{x}_{{\mathbf F}^i}\right),
+\end{equation*}
+where
+\begin{equation*}
+T(\vec{x}) = 
+\left\{
+\begin{array}{l l}
+1 & \text{if $u(\vec{x}) = |\vec{x}|$}, \\
+0.9 \cdot \frac{|\vec{x}|-1-u(\vec{x})}{|\vec{x}|-1} & \text{otherwise}.
+\end{array}
+\right.
+\end{equation*}
+%This is also a common benchmark problem.
+%It is known for the deceptive nature that local hill climbing does not lead to the global optimum.
+The deceptive-trap function is also commonly used for benchmark and is known for its deceptive nature.
+Local hill climbing does not lead to the global optimum when solving trap problems.
+
+Note that although these problems are all binary-encoded,
+our results can be applied to $\chi$-ary problems.
+
+\subsection{GOMEA}
+%Recently the genepool OMEA (GOMEA) has attracted much attention~\cite{2011_LS_MB_OM,2012_Goldman,2013_Martins}.
+%We choose GOMEA as our research subject because it
+GOMEA~\cite{2011_OMEA} is one of the first proposed OMEAs and can be integrated with arbitrary FOS.
+In this paper, we focus on the variation operator of GOMEA, which is named gene-pool optimal mixing (GOM).
+The pseudocode of GOM can be expressed in Algorithm~\ref{alg:GOM}.
+%To examine the performance of GOM, a simplified version of the canonical GOMEA is adopted in our experiment.
+Utilizing this operator,
+the pseudocode of GOMEA can be expressed in Algorithm~\ref{alg:OMEA}.
+The population is denoted by $\mathcal P=\{P_1, \dots, P_n\}$, and
+the offspring are denoted by $\{O_1, \dots, O_n\}$.
+%When all chromosomes in the population evolve into the same instance, %have the same values of variables,
+%the optimization halts.
+Optimization halts if the population converges to one instance.
+In this paper, all experiments are done with an implementation of GOMEA.
+For the experiments that need to determine the minimal required population size, a bisection procedure~\cite{2001_bisection} is adopted.
+
+\begin{algorithm}[h]
+\SetKwInOut{Input}{Input}
+\SetKwInOut{Output}{Output}
+\DontPrintSemicolon
+%\SetAlgoLined
+\caption{Genepool Optimal Mixing}
+\label{alg:GOM}
+%\begin{algorithmic}[1]
+\Input{$f$: fitness function, $R$: receiver,\\
+${\mathcal P}$: population, ${\mathcal F}$: FOS}
+\Output{$O$: offspring}
+\BlankLine
+$O \gets R$ //{\it Copy to the offspring} \;
+$B \gets R$ //{\it Copy to a buffer} \;
+\For{$i=1$ to $|{\mathcal F}|$}{
+    $r \gets$ random number from $1$ to $|{\mathcal P}|$\;
+    $D \gets P_r$ //{\it Select the donor} \;
+    $B_{{\mathbf F}^i} \gets D_{{\mathbf F}^i}$ //{\it Get the fragment of the donor} \;
+%    \Call{EvaluateFitness}{$B$}
+    \If {$f\left(B\right) \geq f\left(O\right)$}{
+	$O_{{\mathbf F}^i} \gets B_{{\mathbf F}^i}$ //{\it Adopt the change if improved}\; }
+	\Else{
+	$B_{{\mathbf F}^i} \gets O_{{\mathbf F}^i}$ //{\it Reset the buffer if not improved} \;
+	}
+%    \EndIf
+%\EndFor
+}
+\Return $O$
+%\end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}[h]
+%\SetAlgoLined
+\SetKwInOut{Input}{Input}
+\SetKwInOut{Output}{Output}
+\DontPrintSemicolon
+%\caption{Genepool Optimal Mixing Evolutionary Algorithm}
+\caption{GOMEA}
+\label{alg:OMEA}
+%\begin{algorithmic}[1]
+\Input{$f$: fitness function, $n$: population size,\\
+${\mathcal F}$: FOS}
+\Output{optimization solution}
+\BlankLine
+%\For{$i=1$ to $n$}
+%    $P_i \gets $\Call{RandomInitialize}{}
+%    $P_i \gets $ randomly initialize
+%    \Call{EvaluateFitness}{$P_i$}
+%\EndFor
+randomly generate $n$ instances for $\mathcal P$\;
+\While{$\neg$\textsc{ShouldTerminate}$\left({\mathcal P}\right)$}{
+    \For{$i=1$ to $n$}{
+	$O_i \gets $\Call{GenepoolOptimalMixing}{$f, P_i, {\mathcal P}, {\mathcal F}$}\;}
+    \For{$i=1$ to $n$}{
+	$P_i \gets O_i$\;}
+}
+%\EndWhile
+%\Return \Call{TheBestIn}{$\mathcal P$}
+\Return the best instance in $\mathcal P$
+%\end{algorithmic}
+\end{algorithm}
+
+%In the canonical GOMEA~\cite{2011_OMEA},
+%%steepest ascent hill climbing is applied to the initial population,
+%the linkage information is used to build the FOS.
+%The canonical GOMEA~\cite{2011_OMEA} uses the linkage information to build the FOS.
+In practice, linkage detection techniques are applied to generate FOS.
+In our scenario, this step is omitted.
+%We adopt perfect model instead of learned one to prevent unnecessary noise,
+%Hill climbing is neglected, since it does not affect the mixing operator.
+We manually determine the FOS before optimization to prevent unnecessary noise.
+We also disable the function of mutation in all of our experiments,
+which is the same as the scenario in the canonical GOMEA.
+
+
+%\subsection{Previous Results of Population Sizing and Convergence Time}
+\subsection{Population Sizing}
+
+%For long the importance of building blocks~\cite{1975_Holland,1989_Goldberg} have been noticed. 
+For genetic algorithms (GAs), the supply model was proposed based on the concept of 
+%Successful design of GAs can be decomposed into several aspects~\cite{1992_Goldberg},
+%and one of them is
+ensuring an adequate supply of partial solutions.
+GAs find the global optimum by mixing the segments of it,
+which must exist in the initial population.
+Consider a $\chi$-ary problem which can be decomposed into $m$ parts,
+and each of them contains $k$ variables.
+Since GAs are stochastic processes, we can never guarantee the existence of all partial solutions.
+Instead, we consider a tolerable probability $\alpha$ of not having a partial solution in the initial population.
+By approximating $\alpha$ by $1/m$, the reciprocal of number of subproblems, 
+%Larger population implies higher probability of having all the required partial solutions,
+Goldberg~{\it et~al}.\ derived a minimal required population size in this scenario~\cite{2001_Supply}:
+%\begin{equation*}
+%n=\chi^k\left(k\ln\chi-\ln \alpha\right).
+%\end{equation*}
+%To further simplify this equation, a reasonable assumption is that $\alpha$
+%is inversely proportional to $m$.
+%In other words, substitute $\alpha$ with $1/m$.
+%Hence the required population size can be expressed as
+\begin{equation}\label{eq:goldbergSupply}
+n=\chi^k\left(k\ln\chi+\ln m\right).
+\end{equation}
+
+There are other population-sizing models for GAs.
+Goldberg~{\it et~al}.\ proposed one by considering that
+larger population leads to higher probability of making correct decisions~\cite{1992_Goldberg}.
+Harik~{\it et~al}.\ proposed another model by making an analogy
+between selection in GAs and the gambler's ruin problem~\cite{1999_Gamblers}.
+These models give different estimations of the required population size.
+In this paper, we find out that the supply model is a proper estimator for OMEAs.
+
+%OM operators greatly reduce the required population size, and the above equation does not apply.
+%Nevertheless, the concept of initial supply is similar in this paper.
+
+%\subsection{Convergence Time}
+%
+%Convergence time means the number of generations needed
+%until all instances in the population converge to the global optimum.
+%The convergence time is highly related to the selection mechanism and the selection pressure.
+%In the scenario of tournament selection with selection pressure $s=2$,
+%Thierens and Goldberg have derived a simple estimation of convergence time~\cite{1993_Thierens}:
+%\begin{equation}
+%g_{conv}=\frac{\pi}{2}\sqrt{\pi \ell},
+%\end{equation}
+%where $\ell$ is the number of variables in a chromosome.
+%
+%In OMEA, no explicit selection are done, and this result does not apply.
+%But analogy between OM operators and binary tournament selection can be made to retrieve similar result.
+
+
+%% Chapter 3
+
+%\newpage
+\section{One-Layer Masks}
+\label{sec:nonOverlappingMasks}
+
+To begin our study, we first focus on the scenario so-called one-layer masks where FOS consists of disjoint masks.
+Three assumptions are made in this section.
+First, we only focus on problems which can be fully separated into subproblems.
+Second, we assume that the problem structures are perfectly identified before optimization.
+Discussion on not well-identified problems is in next section.
+Third, we assume the global optimum is unique in every problem.
+For problems with multiple global optimums, we expect smaller required population due to smaller need of initial supply.
+
+
+%We also make two reasonable assumptions. The global optimum is unique, and the population is randomly initialized.
+%In this scenario, we proposed the population-sizing model and the convergence-time model.
+%Combination of these two models leads to the NFE model.
+
+%Apparently the global optimum of $f_{onemax}$ is a chromosome with all bits being $1$s.
+%All the variables are independent when evaluated,
+%so this function can be further decomposed into smaller subfunctions.
+%The variables can be partitioned into some disjoint sets.
+%Assume there are $m$ such sets, $m\in{\mathbb N}$.
+%The sets contains $k_1,k_2, \dots , k_m$ bits respectively,
+%with $\sum\nolimits_{i=1}^m k_i = \ell$.
+%A chromosome is the global optimum if and only if every variable is one,
+%which implies every set is composed of all ones.
+%Assume the FOS $\mathcal{F}$ consists of masks in correspondence to the sets,
+%which means $\mathcal{F}=\{{\mathbf{F}}^1, \dots , {\mathbf{F}}^m\}$,
+%with $|{\mathbf F}^i| = k_i$, $1\leq i\leq m$.
+%%Consider the case that no mutation occurred.
+%For this special case,
+%the following results are derived.
+
+\subsection{Population Sizing}
+
+%Assume there is only one global optimum for the problem.
+The required population size can be estimated from the viewpoint of initial supply.
+Consider a set containing $k$ variables which are $\chi$-ary,
+in correspondence to a mask with $k$ indexes.
+We assume that the optimal state of the set is unique, which is part of the unique global optimum.
+A set is considered as correct if it is of optimal state, and is incorrect otherwise.
+%In other words, a correct set is a part of the global optimum.
+%A set of variables is called an incorrect one if it is not correct.
+The probability of the set being correct after
+uniformly random initialization is $\chi^{-k}$.
+Since the variables are exchanged using the corresponding mask,
+they are always tied together during mixing.
+%Therefore the mixing operation can be considered an exchange of existing variable pattern.
+Therefore no new pattern is created after mixing.
+
+Since the masks reflect the decomposed subproblems,
+correct sets are never replaced,
+and eventually dominate the population.
+Hence the population converges to the optimal state for the mask
+if and only if at least one correct set exists initially.
+For a mask of size $k$,
+the probability that at least one set of initial variables is correct among the population is
+\begin{equation*}
+p_{correct} = 1-\left(1-\chi^{-k}\right)^n.
+\end{equation*}
+%EA finds the global optimum if and only if all sets are in optimal state, 
+EA finds the global optimum if and only if every subproblem contains correct sets initially,
+the probability of which is
+\begin{equation}\label{eq:pop_size_raw}
+p_{success}=\prod\limits_{\forall {\mathbf{F}}^i \in {\mathcal{F}}} \left(1-\left(1-\chi^{-|{\mathbf{F}}^i|}\right)^n\right).
+\end{equation}
+If the tolerable failure rate of EA is $\alpha$,
+solving $p_{success}=1-\alpha$ yields the required population size $n$.
+%\begin{equation}
+%1-\alpha=\prod\limits_{\forall {\mathbf{F}}^i \in {\mathcal{F}}} \left(1-\left(1-\chi^{-|{\mathbf{F}}^i|}\right)^n\right)
+%\end{equation}
+
+%To study further on the population size,
+%consider the case the sizes of all disjoint sets are the same,
+A special case of Equation~\ref{eq:pop_size_raw} is that all masks are equal-sized,
+which means $|{\mathbf{F}}^i| = k$, $i={1,2, \dots, m}$.
+Therefore the equation can be rewritten as
+\begin{equation}\label{eq:suc_rate}
+1-\alpha=p=\left(1-\left(1-\chi^{-k}\right)^n\right)^m.
+\end{equation}
+This result is verified empirically in Figure~\ref{fig:supply}.
+We can see that the experiment values are accurately estimated.
+
+Equation~\ref{eq:suc_rate} also leads to the required population size:
+\begin{equation} \label{eq:pop_size}
+n=\frac{\ln\left({1-\left(1-\alpha\right)^{\frac{1}{m}}}\right)}{\ln\left({1-\chi^{-k}}\right)}.
+\end{equation}
+%Now we consider its complexity with regarding to $m$.
+%From this equation the complexity can be derived.
+Note that $0<\frac{1}{m}\leq1$ in Equation~\ref{eq:pop_size}.
+To derive the complexity of $n$,
+we consider a convex function 
+$f\left(x\right)=\left(1-\alpha\right)^x$,
+where $x\in(0,1]$.
+Two inequalities can be derived:
+%\begin{equation}\label{eq:ineq1}
+%f\left(x\right)\geq f\left(0\right) + x f'\left(0\right) = 1 - \ln\frac{1}{1-\alpha}\cdot x,
+%\end{equation}
+%and
+%\begin{equation}\label{eq:ineq2}
+%f\left(x\right)\leq\left(1-x\right)f\left(0\right)+x f\left(1\right) = 1-\alpha x.
+%\end{equation}
+%
+\begin{equation*}
+\left(1-x\right)f\left(0\right)+x f\left(1\right)\geq f\left(x\right)\geq f\left(0\right)+x f'\left(0\right)
+\end{equation*}
+%Thus we have the following inequality.
+Let $x=\frac{1}{m}$ and take natural log, we have
+%Combining these inequalities and the fact that the natural logarithm is strictly increasing yields
+\begin{equation*}
+\frac{\ln\frac{1}{1-\alpha}}{m}\leq 1-\left(1-\alpha\right)^\frac{1}{m} \leq \frac{\alpha}{m},
+\end{equation*}
+%\begin{equation*}
+%\ln\left(\frac{ \ln\frac{1}{1-\alpha}}{m}\right) \geq\ln\left(1-\left(1-\alpha\right)^\frac{1}{m}\right) \geq \ln\left(\frac{\alpha}{m}\right),
+%\end{equation*}
+\begin{equation*}
+\ln\left( c_1 \frac{1}{m}\right) \geq\ln\left(1-\left(1-\alpha\right)^\frac{1}{m}\right) \geq \ln\left(c_2 \frac{1}{m}\right),
+\end{equation*}
+where $c_1$ and $c_2$ are some constants.
+
+%For other variables in Equation~\ref{eq:pop_size},
+%$\alpha$ is the tolerable failure rate, and should not be changed.
+
+%Under the assumption that the global optimum is unique, the results could be extended to any decomposable problems.
+To compare the optimization cost of problems with different sizes, we assume that the problems have similar structures,
+which implies they are encoded in the same way ($\chi$ is constant),
+and the adopted masks are similar ($k$ is constant).
+The tolerable failure rate $\alpha$ should not vary with the problem size.
+By fixing $\alpha$, $\chi$, and $k$,
+asymptotically tight bound for Equation~\ref{eq:pop_size} with regarding to $m$ can be derived:
+
+\begin{equation*}
+\Theta\left(n\right)=\Theta\left(\ln\left(1-\left(1-\alpha\right)^\frac{1}{m}\right)\right) = \Theta\left(\ln m\right).
+\end{equation*}
+
+The complexity matches the supply model in Equation~\ref{eq:goldbergSupply}, which also leads to $n=\Theta\left(\ln m\right)$.
+In contrast,
+models concerning decision making suggest population sizing from $\Theta\left(\sqrt{m}\right)$ to $\Theta\left(m\right)$~\cite{1992_Goldberg, 1999_Gamblers}.
+%the decision-making model proposed by Goldberg~{\it et~al}.\ leads to $n=\Theta\left(m\right)$~\cite{1992_Goldberg}.
+%Harik~{\it et~al}.\ proposed the gambler's ruin model with $n=\Theta\left(\sqrt{m}\right)$~\cite{1999_Gamblers}.
+By comparing the complexities, we verified that the concept of supply suits well for OMEAs, while others do not.
+
+%The figure indicates that the initial supply model is a good estimator of required population size.
+%The results show that the successful rates is well estimated only depends on the supply model.
+%Therefore the population size only depends on the initial supply instead of other aspects, such as decision-making.
+%
+%An experiment is conducted to verify our model.
+%A 500-bit onemax problem is used, with an FOS consisting of 100 masks.
+%Each of the masks contains 5 variables.
+%For various population size, optimization is repeated 10000 times, and the number of successful runs is recorded.
+%The result is shown in Figure~\ref{fig:supply},
+%where the theoretical values are given by Equation~\ref{eq:suc_rate}.
+%The experiment result indicates that
+%the initial supply model along is a good estimator of the required population size for disjoint masks.
+
+\begin{figure}%[H]
+\centering
+\epsfig{file=supply.eps, width=3in}
+\caption{
+Success rate for various population sizes with $\ell =500$ and $k=5$.
+Experiments are repeated $10^4$ times.
+The maximum absolute error is $1.03\%$.
+}
+\label{fig:supply}
+\end{figure}
+
+\subsection{Convergence Time}
+
+%The study of convergence time involves two parts.
+%The case of a single mask is first studied,
+%the result of which then extends to multiple masks.
+%Convergence time is the number of generations for OMEAs to reach the global optimum.
+The study of convergence time, the number of generations for OMEAs to converge, involves two parts.
+The case of a single mask is first studied,
+and the result of which is then extended to two-layer masks.
+
+For the one-mask case,
+denote the mask size by $k$ and the generation number by $t$, starting with $t=0$.
+%The mask size $k$ equals to $\ell$,
+%which corresponds to all the variables.
+%Note that $t\in{\mathbb N}_0$, the set of natural numbers including zero.
+%$t$ is zero in the initial state.
+%After each generation, $t$ is increased by 1.
+$t$ increases 1 after each generation.
+Define $p_t$ as the proportion of correct sets among all chromosomes.
+%Assume that the global optimum is unique and the population is randomly initialized,
+$p_0$ can be approximated by its expected value, $\chi^{-k}$.
+%By modeling the growth of $p_t$ we can estimate the convergence time.
+We estimate the convergence time by modeling the growth of $p_t$.
+%The convergence time can be derived by 
+%solving $p_{t_{conv}} = 1$.
+%An approximation can be derived by solving the equation iteratively.
+
+%In GOMEA, a variable set of a candidate is selected, and a set from another candidate is then selected,
+%trying to donate the bit pattern to the previous one.
+In GOMEA, two candidates are selected as the donor and receiver,
+and the former tries to donate part of its bit pattern to the latter.
+%Since there is only one set of variables,
+The receiver takes the donation only if its fitness does not decrease,
+so a correct set never accepts an incorrect one.
+%On the other hand, an incorrect set might be overwritten by a correct one.
+%When an incorrect set is taken as the receiver,
+On the contrary, incorrect receiver becomes correct once the donor is correct.
+%$P\left(\text{donor is correct}\right)=p_t$.
+%On the other hand, the probability that a correct set overwrites an incorrect one is
+%$P\left(\text{donor is correct}\right)\cdot P\left(\text{receiver is incorrect}\right) = p_t\cdot\left(1-p_t\right)$.
+%Here we make the assumption that $p_t$ does not vary much during one generation.
+Since the expected number of incorrect chromosomes in generation $t$ is $n\left(1-p_t\right)$,
+%Since there are $n\left(1-p_t\right)$ incorrect chromosomes in generation $t$,
+%Note that the change is not really made on the receiver, but its offspring instead.
+%During the mixing stage, the variables in population remain constant while producing the offspring.
+%Therefore $p_t$ remains constant during one generation.
+%In a generation, each candidate in population is seleted as receiver exactly once.
+%There are total $n$ chromosomes, and the expected number of incorrect sets is $n\cdot \left(1-p_t\right)$,
+%so
+the expected gain in the number of correct sets after one generation is
+$n\left(1-p_t\right)\cdot Pr\left(\text{donor is correct}\right)
+=n p_t\left(1-p_t\right)$.
+Note that changes are made on the offspring instead of receiver,
+so $p_t$ remains constant until the end of the current generation.
+Thus we get the iterative equation:
+\begin{equation}
+\label{eq:p_ite}
+n p_{t+1}-n p_t = n\cdot p_t\cdot\left(1-p_t\right).
+\end{equation}
+For $t\in{\mathbb N}_0 = {\mathbb N} \cup \{0\}$,
+denote $1-p_t$ by $q_t$, and we have
+\begin{equation*}
+q_t-q_{t+1} = \left(1-q_t\right)q_t,
+\end{equation*}
+\begin{equation*}
+%\Rightarrow
+q_t^2 =  q_{t+1}.
+\end{equation*}
+Along with $q_0=1-p_0=1-\chi^{-k}$, we get
+\begin{equation} \label{eq:p_t}
+p_t = 1-q_t=1-\left(1-\chi^{-k}\right)^{2^t}, t\in{\mathbb N}_0.
+\end{equation}
+
+Although the solution to Equation~\ref{eq:p_ite} is derived,
+no $t$ satisfies $p_t=1$,
+because we approximate $p_t$ by its expected value.
+Since $p_t$ represents the proportion of correct instances in the population with $n$ candidates,
+the greatest value of $p_t$ less than $1$ is $1-1/n$. %$1-\frac{1}{n}$.
+%This the limit of continuous estimation.
+Since the expected time for $p_t$ to reach $1-1/n$ is less than the convergence time,
+we derive a lower bound for the latter by solving $p_{t_{conv}} > 1-1/n$.
+%Hence the estimation of convergence time is decomposed into two parts.
+%First, we estimate the time $t_1$, the required time for $p_t$ to grow to $1-1/n$. %$1-\frac{1}{n}$.
+%Second, we estimate the time $t_2$,
+%which means how long it takes for the remaining incorrect chromosome to converge to the correct one.
+%Hence the estimation of convergence time equals to $t_1+t_2$.
+
+%Estimation of $t_1$ can be derived 
+To estimate the lower bound $t_L$,
+we approximate $p_t$ by a continuous function
+%The definition of $p_t$ can be extended to
+$p\left(t\right)$, which treats $t$ as a real number.
+From Equation~\ref{eq:p_t}, we set
+\begin{equation}
+p\left(t\right) = 1 - q\left(t\right) = 1 - \left(1-\chi^{-k}\right)^{2^t}, t \geq 0.
+\end{equation}
+Note that $p\left(t\right) = p_t$ for $t\in{\mathbb N}_0$.
+%and $p\left(t\right)$ is a monotonically increasing function.
+%This equation can be considered an approximation of the sequence $p_t$.
+Solving $p\left(t_{conv}\right)>1-\frac{1}{n}$ yields
+%from the equation above, we get
+\begin{equation} \label{eq:conv1}
+t_{conv} > t_L = \log_2 \left(\frac{\ln\left( \frac{1}{n}\right)}{\ln\left(1-\chi^{-k}\right)}\right).
+\end{equation}
+%where $\lg$ is the binary logarithm.
+
+%%Then we consider $t_2$.
+%When only one incorrect set remains,
+%we simply approximate the required time by one generation,
+%since the population converges within one generation in most times.
+%Therefore we have $t_2=1$.
+
+%
+%it becomes correct in the next generation if and only if the donor is another set rather than itself.
+%%If the incorrect set acts as the donor itself, which is possible in GOMEA, it remains incorrect.
+%Therefore after one generation, the status remains unchanged with a probability $1/n$.
+%Estimating $t_2$ by its expected value yields
+%%\begin{equation*}
+%%t_2 = 1 + \frac{1}{n} \cdot t_2,
+%%\end{equation*}
+%\begin{equation} \label{eq:t2}
+%t_2 = \frac{n}{n-1}.
+%\end{equation}
+
+%Combining $t_1$ and $t_2$ yields %from Equations~\ref{eq:t1} and \ref{eq:t2} yields the estimation of convergence time:
+%\begin{equation}
+%\label{eq:conv1}
+%%t_{conv} = t_1 + t_2 = \lg\left(\frac{\ln \frac{1}{n}}{\ln\left(1-\chi^{-k}\right)}\right) + \frac{n}{n-1}.
+%t_{conv} = t_1 + t_2 = \log_2 \left(\frac{\ln \frac{1}{n}}{\ln\left(1-\chi^{-k}\right)}\right) + 1.
+%\end{equation}
+
+%Next, consider the case that multiple disjoint masks are used when mixing the chromosomes.
+The result can be further extended to multiple disjoint masks.
+%Since we assume that the masks well reflects the BBs,
+%In the onemax problem,
+%variables are mutually independent,
+Since the problem is separable,
+convergence in one position does not interfere with that in another position.
+Convergence time is thus dominated by the variable set with the longest convergence time.
+
+Assume that the chromosome consists of $m$ sets of variables,
+convergence time of which are
+%and the convergence time of them are
+$t_{conv,1}, \dots, t_{conv,m}$ respectively.
+We have $t_{conv} = \max_i\left({t_{conv,i}}\right)$.
+According to Equation~\ref{eq:conv1},
+smaller initial proportion leads to longer convergence time.
+%a negative relationship exists between convergence time and proportion of correct initial variables.
+For the case that each set contains $k$ variables,
+we can approximate the maximum of $t_{conv,i}$ by finding the convergence time of the set with
+least initial correct instances.
+Let $X_1, \dots, X_m$ be $m$ independent and identically distributed random variables following the binomial distribution $B\left(n,\chi^{-k}\right)$.\footnote
+{
+$B\left(n,p\right)$ denotes the distribution with the
+pmf $Pr\left(x\right)=
+\left\{
+\begin{array}{l l}
+\frac{n!}{\left(n-x\right)!x!} p^x \left(1-p\right)^{n-x} & x\in\{0,1,\dots,n\}, \\
+0 & \text{otherwise}.
+\end{array}
+\right.$
+}
+Denote the first order statistic by $X_{\left(1\right)}=\min_i\left(X_i\right)$. Let $E[X_{\left(1\right)}] = x_{\left(1\right)}$.
+Hence for multiple masks we have
+\begin{equation}
+\label{eq:conv}
+%t_{conv} = t_1 + t_2 = \lg\left(\frac{\ln\left(\frac{1}{n}\right)}{\ln\left(1-\frac{x_{\left(1\right)}}{n}\right)}\right) + \frac{n}{n-1}.
+t_{conv} > t_L = 
+\log_2 \left(\frac{\ln \left(\frac{1}{n}\right)}{\ln\left(1-\frac{x_{\left(1\right)}}{n}\right)}\right).
+\end{equation}
+
+The lower bound we derived is verified with results on the onemax problem.
+Figure~\ref{fig:conv1} shows the case of one mask, where the lower bound is from Equation~\ref{eq:conv1}.
+%The case of one mask and multiple masks are shown in Figures~\ref{fig:conv1} and \ref{fig:conv2} respectively,
+%where the theoretical values are from Equations~\ref{eq:conv1} and \ref{eq:conv} respectively.
+%In the first experiment, only one mask of size $5$ is used for mixing.
+%as the scenario in Equation~\ref{eq:conv1}.
+%The problem size is 5 bits, implying the mask contains 5 variables.
+%The result is shown in Figure~\ref{fig:conv1}, where the theoretical values are derived from Equation~\ref{eq:conv1}.
+\begin{figure}%[H]
+\centering
+\epsfig{file=conv.eps, width=3in}
+\caption{
+Convergence time with one mask of size $5$.
+%For population size ranging from $100$ to $25600$,
+%the maximum relative error is $4.99\%$; the maximum absolute error is $0.42$ generations.
+For population size ranging from $200$ to $204800$,
+the maximum difference between experiment values and the lower bound is $0.81$ generations.
+The difference decreases for large population.
+}
+\label{fig:conv1}
+\end{figure}
+The case of multiple disjoint masks is shown in Figures~\ref{fig:conv2} and \ref{fig:conv3},
+where the lower bound is from Equation~\ref{eq:conv}.
+%Next, the case of multiple disjoint masks is shown in Figure~\ref{fig:conv2}, where
+%theoretical results are derived from Equation~\ref{eq:conv}.
+%empirical and theoretical results are shown in Figure~\ref{fig:conv2}.
+\begin{figure}%[H]
+\centering
+\epsfig{file=conv2.eps, width=3in}
+\caption{
+Convergence time for $n=10000$.
+For problem size ranging from $25$ to $800$,
+the maximum difference is $0.85$ generations.
+}
+\label{fig:conv2}
+\end{figure}
+
+\begin{figure}%[H]
+\centering
+\epsfig{file=conv3.eps, width=3in}
+\caption{
+Convergence time for $\ell=100$ with masks of size 5.
+For population size ranging from $200$ to $102400$,
+%the maximum relative error is $13.3\%$;
+%the maximum absolute error is $1.37$ generations.
+the maximum difference between experiment values and the lower bound is $1.37$ generations.
+The difference decreases for large population.
+}
+\label{fig:conv3}
+\end{figure}
+
+%We infer that one major reason for the deviation in our results is that experiment samples are integers.
+%The experiment values seems close to integers.
+%This also explains why empirical results do not grow smoothly in Figure~\ref{fig:conv1}.
+
+%The results strictly satisfy the proposed lower bound.
+The proposed lower bound strictly bounds the empirical results.
+For large $n$, $1-1/n$ approaches $1$.
+Since the lower bound is derived by solving $p\left(t_L\right) = 1-1/n$,
+the lower bound should be close to the convergence time for large population.
+This can be verified in Figures~\ref{fig:conv1} and \ref{fig:conv3}.
+Since an almost converged population is likely to converge in one more generation,
+the lower bound is about one generation below experiment results.
+
+%Unlike the case of a single mask, the convergence time may decrease as the population size increases
+%when multiple masks are adopted.
+%This is mainly because of the $\frac{x_{\left(1\right)}}{n}$ term in Equation~\ref{eq:conv}.
+%Due to the Central Limit Theorem, the first order statistics of the proportion of correct instances increases when $n$ is large.
+%This phenomenon is observed and verified in our experiments, and shown in Figure~\ref{fig:conv3}.
+In the case of multiple masks,
+we find out that the convergence time decreases while $n$ increases when $n$ is small.
+%when multiple masks are adopted.
+This is mainly because of the $\frac{x_{\left(1\right)}}{n}$ term in Equation~\ref{eq:conv}.
+According to the central limit theorem,
+the first order statistics of the proportion of correct instances increases and approaches $\chi^{-k}$ when $n$ grows.
+When $n$ is large, the $\ln{\left(\frac{1}{n}\right)}$ term dominates the lower bound, making it increase when $n$ grows.
+This phenomenon is verified in Figure~\ref{fig:conv3}.
+
+
+
+\subsection{Number of Function Evaluations}\label{sec:nfe}
+
+%There are two steps in OMEA which requires fitness function evaluations.
+%Two steps in OMEA require fitness function evaluations.
+%First, all chromosomes in the population are evaluated once.
+%Next, the chromosomes keeps being evaluated until all of them converge to a solution.
+%The NFE for the first step, denoted by $n_{fe,1}$, equals to $n$, the size of population.
+%What needs further study is $n_{fe,2}$, the NFE of the second step.
+%The total number of NFE can be estimated by
+The function evaluations of OMEAs consist of two parts.
+The first is those during the initialization, and the second is those during OM.
+Therefore the total NFE is
+\begin{equation}
+n_{fe} = n + n_{fe,OM}.
+\end{equation}
+We then model $n_{fe,OM}$ for the case of a single size-$k$ mask.
+
+%For the case of a single mask of size $k$, the following result is derived.
+%We start our study on the case that $m=1$, which means there is only one mask.
+%Denote the density of correct solutions in generation $t$ by $p_t$.
+As before, the proportion of correct subsolutions in the population at generation $t$ is $p_t$.
+%At generation $t$, denote the proportion of correct solutions among the population by $p_t$.
+Under the assumption of unique global optimum,
+$\chi^k-1$ subsolutions are not optimal.
+Denote each of their densities in the population by $q^{(1)}_t, \dots, q^{(\chi^k-1)}_t$, respectively.
+In this generation, a receiver only needs to be evaluated when it differs from the donor.
+Therefore the probability that a receiver needs the evaluation is
+\begin{equation}\label{eq:e_t}
+e_t = 1-p_t^2-\left(q^{\left(1\right)}_t\right)^2-\left(q^{\left(2\right)}_t\right)^2-\dots-\left(q^{\left(\chi^k-1\right)}_t\right)^2.
+\end{equation}
+We already have the approximation of $p_t$ in Equation~\ref{eq:p_t}.
+Since $q^{(1)}_t, \dots, q^{(\chi^k-1)}_t\in [0,1]$, we have
+\begin{equation*}
+\frac{\left(\sum\limits_{i=1}^{\chi^k-1} q_t^{\left(i\right)} \right)^2}{\chi^k-1}
+    \leq \sum\limits_{i=1}^{\chi^k-1} \left(q_t^{(i)}\right)^2
+    \leq \left(\sum\limits_{i=1}^{\chi^k-1} q_t^{(i)}\right)^2.
+\end{equation*}
+With the condition that
+\begin{equation*}
+\sum\limits_{i=1}^{\chi^k-1} q_t^{(i)} = 1-p_t,
+\end{equation*}
+Equation~\ref{eq:e_t} leads to
+\begin{equation}\label{eq:UL}
+1-p_t^2-\frac{\left(1-p_t\right)^2}{\chi^k-1}
+\geq e_t
+\geq 1-p_t^2-\left(1-p_t\right)^2.
+\end{equation}
+
+The required NFE can be approximated by
+\begin{equation*}
+n_{fe,OM} = \sum\limits_{t=0}^{\infty} n\cdot e_t  = n \sum\limits_{t=0}^{\infty} e_t.
+\end{equation*}
+%Recall Equation~\ref{eq:p_t}.
+By expanding the summation, we can derive the upper and lower bounds of $n_{fe}$.
+For the upper bound, there is no closed form.
+Since 
+$\sum\limits_{t=0}^{\infty}\left(1-p_t^2-\frac{\left(1-p_t\right)^2}{\chi^k-1}\right)$ is a function of $k$ if $p_t$ is approximated by Equation~\ref{eq:p_t},
+we denote it by a function $U\left(k\right)$,
+where $U\left(k\right)$ is a function from $\mathbb{N}$ to $\mathbb{R}$.
+$\mathbb{N}$ is the natural number set, and $\mathbb{R}$ is the real number set.
+Here the variable $\chi$ is considered constant.
+So we have
+\begin{equation*}
+n_{fe,OM} \leq n\cdot U\left(k\right).
+\end{equation*}
+
+There is a closed form of the lower bound:
+%We could prove that
+\begin{equation*}
+\begin{aligned}
+\sum\limits_{t=0}^{\infty}\left(1-p_t^2-\left(1-p_t\right)^2\right)
+=\sum\limits_{t=0}^{\infty} \left(2 q_t - 2 q_t^2\right) \\
+=\sum\limits_{t=0}^{\infty} \left(2q_t - 2q_{t+1}\right)
+=2q_0.
+\end{aligned}
+\end{equation*}
+This yields
+\begin{equation*}
+n_{fe,OM} \geq n\cdot 2q_0 = n\cdot2\left(1-\chi^{-k}\right) = n\cdot L\left(k\right),
+\end{equation*}
+where $L\left(k\right) = 2\left(1-\chi^{-k}\right)$.
+Hence the NFE can be bounded by
+\begin{equation*}
+n\cdot U\left(k\right) \geq n_{fe,OM} \geq n\cdot L\left(k\right).
+\end{equation*}
+
+The results can be extended to arbitrary number of masks, $m$.
+Since all of our masks are disjoint, evaluations of them are independent to each others.
+So the total NFE is the summation of all required NFEs for each mask.
+Therefore we get
+\begin{equation*}
+n\cdot \sum_{\forall {\mathbf{F}}^i \in {\mathcal{F}}} U\left(|{\mathbf{F}}^i|\right)
+\geq
+n_{fe,OM}
+\geq
+n\cdot \sum_{\forall {\mathbf{F}}^i \in {\mathcal{F}}} L\left(|{\mathbf{F}}^i|\right),
+\end{equation*}
+or equivalently,
+\begin{equation}
+n+n\cdot \sum_{\forall {\mathbf{F}}^i \in {\mathcal{F}}} U\left(|{\mathbf{F}}^i|\right) 
+\geq
+n_{fe}
+\geq
+n+n\cdot \sum_{\forall {\mathbf{F}}^i \in {\mathcal{F}}} L\left(|{\mathbf{F}}^i|\right).
+\end{equation}
+For the special case that the sizes of all masks are equal, we have
+\begin{equation}
+\label{eq:nfe}
+n\cdot\left(1+mU\left(k\right)\right)
+\geq
+n_{fe}
+\geq
+n\cdot\left(1+mL\left(k\right)\right),
+\end{equation}
+where $k$ is the size of every mask,
+and $m$ is the number of masks.
+
+The problem nature affects the required number of evaluations.
+In Equation~\ref{eq:nfe}, the equality of upper bound holds when $q_t^{\left(1\right)} = q_t^{\left(2\right)} = \dots = q_t^{\left(\chi^k-1\right)}$.
+Consider one of our test problems, the Royal Road function. % in Equation~\ref{eq:RR}.
+By definition, all suboptimals in one subproblem (the $R\left(\vec x\right)$ in Equation~\ref{eq:RR}) contribute equally to the fitness.
+%When optimizing this function, one cannot tell two sets apart by fitness if none of them is optimal.
+Because all suboptimals are equally competitive during OM,
+proportions of all suboptimal instances are roughly equal.
+Since the equality of upper bound holds,
+this problem costs more function evaluations than others do.
+
+%The following experiments are designed to verify the results.
+The results are verified in the following experiments.
+%In the first scenario, the number of masks $m$ is fixed to $100$,
+%and the population size is $10^4$.
+Figure~\ref{fig:nfe_k} shows NFE with masks of various sizes.
+Figure~\ref{fig:nfe_n} shows the result with various population sizes.
+The theoretical values are from Equation~\ref{eq:nfe}.
+%and the result is shown
+%There are 100 masks in this scenario, and each of them contains 5 indices.
+
+\begin{figure}
+\centering
+\epsfig{file=nfe_k.eps, width=3in}
+\caption{
+$n_{fe}$ with different sizes of masks.
+Each FOS contains $100$ masks, and the population size is fixed at $10^4$.
+Note that the Royal Road, the onemax, and the trap function are identical for $k=1$.
+}
+\label{fig:nfe_k}
+\end{figure}
+
+\begin{figure}
+\centering
+\epsfig{file=nfe_n.eps, width=3in}
+\caption{$n_{fe}$ with different sizes of population.
+$m=100$ and $k=5$ for the test problems.
+}
+\label{fig:nfe_n}
+\end{figure}
+
+In these two experiments, we have made some observations.
+First, the lower bound is generally far from experiment results when there are multiple suboptimals,
+since we derive the lower bound by ignoring the cost of comparison between suboptimals
+in Equation~\ref{eq:UL}.
+Second,
+%while all the experiment values are bounded by the lower bound,
+%values of the Royal Road function slightly exceed the upper bound.
+NFE of the Royal Road function exceeds the upper bound by $2.17\%$ when $n=200$ and by $0.02\%$ when $n=12800$
+in Figure~\ref{fig:nfe_n}.
+%We infer that the reason is the assumption of sufficient population size.
+We believe that the reason is as follows.
+The estimation of $p_t$ deriving from the expected value %a continuous approximation to an iterative function,
+while $p_t$ is discrete is the reason.
+For small $n$, the approximation is inaccurate.
+This is verified in Figure~\ref{fig:pt_n}, which indicates that
+%For solving a 500-bit onemax problem with 5-bit masks,
+%$p_t$ is recorded for various population sizes.
+smaller population leads to slower convergence, %makes the population converge more slowly,
+implying additional consumption in function evaluations.
+This explains why NFE is slightly underestimated, especially when $n$ is small.
+\begin{figure}%[H]
+\centering
+\epsfig{file=pt_n.eps, width=3in}
+\caption{$p_t$ for various population sizes.
+The problem is a $500$-bit onemax problem, with masks of size $5$.
+We can see smaller $n$ leads to slower convergence.}
+\label{fig:pt_n}
+\end{figure}
+%The derived upper and lower bounds are based on approximation,
+%so they are not absolute tight bounds but estimators of NFE.
+%Evolutionary algorithms are stochastic processes,
+%so it is not easy nor realistic to derive absolute bounds for its performance.
+%Even though the results are not absolute bounds,
+%they are still good estimator of the required NFE.
+Third, NFE of the Royal Road problem is always the greatest,
+and NFE of the trap problem is always the least.
+This verifies that the subproblem affects the NFE, yet the difference is subtle.
+Last, the upper bound seems a proper estimator for the NFE for all test problems, %regardless of the problems, 
+with relative error less than $5\%$.
+We infer that the high mask-wise selection pressure of OM
+quickly filters out the incorrect sets,
+and therefore the convergence behavior is not much affected from the subproblem structures.
+
+\section{Two-layer Masks}
+\label{sec:twoLayerNonOverlappingMasks}
+
+In this section, we extend our study to two-layer masks as the first step to multi-layer masks.
+%which are often adopted in OMEAs.
+Multi-layer masks are usually adopted since in practice most problem structures are unknown and not fully separable.
+%In practice, multi-layer masks are often adopted in EAs.
+%Empirical results indicates that GOMEA incorporates well with
+%the linkage-tree structure~\cite{2011_OMEA}, which is a hierarchical multi-layer FOS.
+%Following the results from previous section,
+%we extend our study to the scenario of two-layer masks as the foundations of multi-layer case.
+In this section, we focus on the onemax problem with FOS in the form ${\mathcal F}_{k,1}$ with $k>1$. % is adopted. 
+Note that the FOS is defined in Definition~\ref{def:catFOS}.
+%Here we focus on the onemax problem.
+
+%\subsection{Population Size}
+
+The population converges to the global optimum if and only if all the variables converge to $1$s.
+%On the other hand, optimization fails if any variable does not converge to $1$.
+For an index $i$, consider all the variables $\vec{x}_i$ in every chromosomes. %should converge to $1$ to achieve global optimum.
+%Among the whole population,
+There are $n$ variables with this index.
+We use the notation $p$ to denote the proportion of $1$s in these $n$ variables.
+%Consider the two layer of FOS applied here, namely ${\mathcal F}_k$ and ${\mathcal F}_1$.
+
+Since masks in a homogeneous FOS do not share common variables,
+exactly one mask in ${\mathcal F}_k$ and one mask in ${\mathcal F}_1$ contain $i$.
+%the variable $\vec{x}_i$ belongs to exactly one mask in ${\mathcal F}_k$, and to another in ${\mathcal F}_1$.
+When mixing with one-bit masks, $1$s never change to $0$s,
+but this is not the case of $k$-bit masks.
+Since the fitness is evaluated when all $k$ variables are exchanged,
+the overall fitness never decreases, but some variables can be ruined.
+For example, the pattern {\tt 101} overwrites {\tt 010} when a 3-bit mask applies to them, %they are mixed with a 3-bit mask,
+since the fitness increases by 1.
+However, the second variable in {\tt 010}, which is one, is overwritten by a zero.
+For a certain index, if all $n$ variables with the index in the population become $0$s,
+%If all $n$ variables are zeros,
+%it will fail to find the global optimum.
+the optimization fails.
+
+This phenomenon can be further quantified from the viewpoint of probability.
+%consider the initial state of population.
+By the assumption of random initialization, $p=2^{-1}$ in binary-coded problems.
+For a set of $k$ variables covered by a $k$-bit mask,
+the number of $1$s in the set can be expressed as a random variable.
+If the first variable is zero, the random variable $X_0$ follows the Binomial distribution $B(k-1,2^{-1})$.
+Recall that $k$ is an integer greater than one.
+If the first variable is one, the random variable is $X_1=1+X_0$.
+Consider a variable ${\vec x}_i$ equals to $0$ in the donor and equals to $1$ in the receiver.
+${\vec x}_i$ in the receiver becomes $0$ with probability $Pr\left(X_1\leq X_0\right)$,
+which we called the reverse-growth probability, $p_{rg}$.
+%When optimizing the onemax problem, appearance of $0$s is considered harmful.
+%Therefore larger $p_{rg}$ makes optimization fail with higher probability.
+%The probability that $X_1 < X_0$ affects the probability that a correct variable is lost.
+The probabilities are calculated using the Binomial distribution and shown in Table~\ref{tbl:x1x0}.
+%We can see that higher $k$ leads to higher value of $P(X_1<X_0)$, which means higher probability of loss of correct copies.
+We can see larger $k$ leads to larger $p_{rg}$. %, meaning higher probability of optimization failure.
+
+\begin{table}
+\centering
+\begin{tabular}{|c|c|c|c|c|} \hline
+$k$ & $Pr(X_1>X_0)$ & $Pr(X_1=X_0)$ & $Pr(X_1<X_0)$ & $p_{rg}$\\ \hline
+2 & 75\% & 25\% & 0\%   & 25\%\\
+3 & 69\% & 25\% & 6\%   & 31\%\\
+4 & 66\% & 23\% & 11\%  & 34\%\\
+5 & 64\% & 22\% & 14\%  & 36\%\\ \hline
+\end{tabular}
+\caption{Comparison of two random variables $X_1$ and $X_0$.
+Larger $k$ yields larger $p_{rg}$, which is the probability that $X_1 \leq X_0$.
+%Higher $k$ leads to higher probability of making wrong decision during mixing.
+}
+\label{tbl:x1x0}
+\end{table}
+
+%The probability that an undesired copy is made affects the required population size.
+The required population size varies when adopting various FOSs.
+The concept of cross competition explains this phenomenon~\cite{1992_CC}.
+Cross competition is first introduced to derive an upper bound for the selection pressure in GA.
+%and cross-competitive failure is likely to occur when the selection pressure is high:
+%The upper bound is derived to prevent cross-competitive failure:
+To prevent cross-competitive failure, the selection pressure must satisfy
+\begin{equation*}
+s<n\frac{\ln\left(1-p_0\right)}{\ln \alpha},
+\end{equation*}
+where $s$ is the selection pressure, $p_0$ is the probability that a correct bit is preserved into the next generation,
+and $\alpha$ is a threshold, which means optimization is likely to fail when $\alpha\ell$ variables are incorrectly converged.
+%the proportion of lost bits exceeds $\alpha$.
+After some modification, we obtain
+\begin{equation}\label{eq:CC}
+n>\frac{s\cdot \ln \alpha}{\ln\left(1-p_0\right)}.
+\end{equation}
+
+Although in the scenario of GOMEA, the situation is different, but the similar concept applies.
+Larger $k$ leads to larger $p_{rg}$,
+which then leads to lower probability that a correct bit is preserved.
+In other words, larger $k$ yields smaller $p_0$.
+%to smaller $p_0$, since larger $k$ is more likely to make correct variables be overwritten.
+By assuming that $s$ and $\alpha$ do not vary much with $k$,
+the RHS of Equation~\ref{eq:CC} increases when $k$ increases.
+This means that the lower bound of population size increases.
+In other words, the required population increases if $k$ increases when adopting ${\mathcal F}_{k,1}$.
+
+The following experiments are conducted to verify the above hypothesis.
+For various lengths of problems, different FOSs are adopted to solve the onemax problem.
+These FOSs are ${\mathcal F}_{5,1}$, ${\mathcal F}_{4,1}$, ${\mathcal F}_{3,1}$, ${\mathcal F}_{2,1}$, and ${\mathcal F}_1$.
+The result is shown in Figure~\ref{fig:pop_k1},
+indicating that optimization using ${\mathcal F}_{k,1}$ with larger $k$ requires larger population.
+Furthermore,
+a proportional relationship exists between the required population size for ${\mathcal F}_{k,1}$ and ${\mathcal F}_1$,
+while the latter can be approximated by Equation~\ref{eq:pop_size}.
+%we find out that for ${\mathcal F}_{k,1}$, the required population is proportional to that of ${\mathcal F}_1$,
+From this observation,
+the theoretical values of required population for ${\mathcal F}_{k,1}$ are obtained by fitting the experiment values to a constant multiple of that of ${\mathcal F}_1$.
+According to the results, masks which cover multiple separable subproblems are not beneficial from the viewpoint of population size.
+
+\begin{figure}%[H]
+\centering
+\epsfig{file=pop_k1.eps, width=3in}
+\caption{Required population size for various FOS.
+Theoretical values of ${\mathcal F}_{k,1}$
+are estimated by curve fitting as multiple of that of ${\mathcal F}_1$.
+The maximum relative error among all estimations is $2.0\%$.
+}
+\label{fig:pop_k1}
+\end{figure}
+
+%\subsection{Convergence Time}
+
+%\subsection{Number of Function Evaluations}
+
+%\section{Experiments}
+%\section{Discussions}
+
+\section{Conclusion}
+\label{sec:conclusion}
+
+In this paper, we derived the convergence models of OMEAs
+for one-layer and two-layers masks.
+For problems with separable structures,
+behaviors of GOMEA with masks corresponding to the structures were analyzed.
+The required population size was accurately estimated from the viewpoint of initial supply.
+Analyzing the growth of sub-solution led to the convergence-time model.
+The NFE was then estimated.
+These three models were verified empirically,
+and the values of relative error among all experiments were less than $5\%$.
+For multi-layer disjoint masks, a special case with two-layer masks was studied.
+We found that the concept of cross competition explains the growth in the required population sizes.
+
+%On the topic of optimal mixing, there is still room for future works.
+%Our results can be extended to GOMEA adopting more general FOSs,
+%and the thoughts and methods in this paper may be further applied to other scenarios.
+%Comparison of models of different algorithms is also worth further studying.
+%We believe our work together with further studies may lead to more competent and reliable EAs.
+%Possible future works includes the following.
+As for future work, we would like to extend our results to multi-layer masks by quantifying the effect of cross competition and by investigating the growth of subsolutions iteratively.
+Hopefully, we would be able to analyze the behavior of OMEAs with full linkage tree,
+which is a special case of multi-layer FOS.
+Furthermore, since this paper is limited by the assumptions we made, we would like to study the case with weaker assumptions.
+
+%For two-layer masks,
+%quantitative population models may be further derived, as well as the convergence-time models and NFE models.
+%For multiple-layer masks,
+%quantifying the effect of cross competition may lead to population-sizing models.
+%By inspecting the mixing operator utilizing masks from different layer,
+%the convergence behavior can be modeled as a set of iterative equations,
+%leading to convergence-time models.
+%Since a special case of multiple-layer FOS is the hierarchical linkage sets,
+%models of the LTGA family may be derived.
+%Furthermore, by considering overlapping masks as multiple disjoint-mask layers,
+%one can derived models handling overlapping masks.
+%Possible approaches may be further analyzing the effect of cross competition.
+
+The major contributions of this paper reside in the derivations of
+the population-sizing, the convergence-time,
+and the NFE models for OMEAs with one-layer and two-layer masks.
+Our models are empirically verified and the relative errors of our estimators are small.
+%In addition, according to our models, the following important findings can be conducted.
+In addition, our models lead to the following insightful findings.
+First, for the case of one-layer masks, the required population size is decided by initial supply rather than decision making.
+This explains why OMEAs generally require relatively small populations compared to EDAs.
+Second, NFE for the test problems is very close to the proposed upper bound,
+by which we infer that the mask-wise selection pressure of OM quickly filter out non-optimum subsolutions, making the subproblem composition insignificant.
+Third, for two-layer masks,
+the required population size is proportional to that of the one-layer masks,
+and the ratio is positively related to the reverse-growth probability.
+%First, for the case of one-layer masks,
+%the supply model is an accurate estimator of the required population size,
+%and the convergence time is accurately modeled by estimating the growth of subsolutions.
+%This explains why OMEAs generally require relatively small populations compared to EDAs.
+%Second,
+%NFE for the test problems is very close to the proposed upper bound,
+%by which we infer that the mask-wise selection pressure of OM
+%quickly filter out non-optimum subsolutions,
+%making the subproblem structure insignificant.
+%%the problem characteristics affects the required NFE,
+%%which can be bounded by our estimators.
+%%the derived estimators successfully bound the required NFE which is affected by problem characteristics.
+%Third, for two-layer masks, the required population size is proportional
+%to results from the one-layer-mask case, and the ratio is positively related to
+%the reverse-growth probability.
+%%the probability of the failure of convergence due to cross competition.
+%%the probability of cross competition failure.
+
+
+%By deriving the performance models of GOMEA,
+%users may gain knowledge to choose the proper optimization algorithms.
+%The best algorithm may not exist,
+%but different algorithms should be adopted in different situations.
+%Knowing the cost models of available algorithms prevents users from choosing blindly.
+%Furthermore, the essence of optimal mixing is analyzed in the paper.
+%Further study and improvement could be done with knowledge of this operator.
+%Third, similar concepts in the related works can apply in our work.
+%The successful trial should 
+
+\section{ACKNOWLEDGMENTS}
+
+The authors would like to thank the support by Ministry of Science and Technology in Taiwan under Grant No.\ MOST 103-2221-E-002-177-MY2-1.
+
+\bibliographystyle{abbrv}
+%\bibliography{paper}
+
+\begin{thebibliography}{10}
+
+\bibitem{2012_LN_OM_FI}
+P.~A. Bosman and D.~Thierens.
+\newblock Linkage neighbors, optimal mixing and forced improvements in genetic
+  algorithms.
+\newblock {\em Proceedings of the Genetic and Evolutionary Computation
+  Conference $($GECCO-2012\,$)$}, pages 585--592, 2012.
+
+\bibitem{2013_Filtering}
+P.~A. Bosman and D.~Thierens.
+\newblock More concise and robust linkage learning by filtering and combining
+  linkage hierarchies.
+\newblock {\em Proceedings of the Genetic and Evolutionary Computation
+  Conference $($GECCO-2013\,$)$}, pages 359--366, 2013.
+
+\bibitem{1992_trap}
+K.~Deb and D.~E. Goldberg.
+\newblock Analyzing deception in trap functions.
+\newblock {\em Proceedings of the Second Workshop on Foundations of Genetic
+  Algorithms $($FOGA-1992\,$)$}, 2:98--108, 1992.
+
+\bibitem{1992_Goldberg}
+D.~E. Goldberg, K.~Deb, and J.~H. Clark.
+\newblock Genetic algorithms, noise, and the sizing of populations.
+\newblock {\em Complex Systems}, 6:333--362, 1991.
+
+\bibitem{1992_CC}
+D.~E. Goldberg, K.~Deb, and D.~Thierens.
+\newblock Toward a better understanding of mixing in genetic algorithms.
+\newblock {\em Urbana}, 51:61801, 1992.
+
+\bibitem{2001_Supply}
+D.~E. Goldberg, K.~Sastry, and T.~Latoza.
+\newblock On the supply of building blocks.
+\newblock {\em Proceedings of the Genetic and Evolutionary Computation
+  Conference $($GECCO-2001\,$)$}, pages 336--342, 2001.
+
+\vfill\eject
+
+\bibitem{2012_Goldman}
+B.~W. Goldman and D.~R. Tauritz.
+\newblock Linkage tree genetic algorithms: variants and analysis.
+\newblock {\em Proceedings of the Genetic and Evolutionary Computation
+  Conference $($GECCO-2012\,$)$}, pages 625--632, 2012.
+
+\bibitem{1999_Gamblers}
+G.~Harik, E.~Cant{\'u}-Paz, D.~E. Goldberg, and B.~L. Miller.
+\newblock The gambler's ruin problem, genetic algorithms, and the sizing of
+  populations.
+\newblock {\em Evolutionary Computation}, 7(3):231--253, 1999.
+
+\bibitem{1992_RR}
+M.~Mitchell, S.~Forrest, and J.~H. Holland.
+\newblock The royal road for genetic algorithms: Fitness landscapes and {GA}
+  performance.
+\newblock {\em Proceedings of the First European Conference on Artificial
+  Life}, pages 245--254, 1992.
+
+\bibitem{1993_BGA}
+H.~M{\"u}hlenbein and D.~Schlierkamp-Voosen.
+\newblock Predictive models for the breeder genetic algorithm: {I}.
+  {C}ontinuous parameter optimization.
+\newblock {\em Evolutionary Computation}, 1(1):25--49, 1993.
+
+\bibitem{2002_Pelikan}
+M.~Pelikan, K.~Sastry, and D.~E. Goldberg.
+\newblock Scalability of the {B}ayesian optimization algorithm.
+\newblock {\em International Journal of Approximate Reasoning}, 31(3):221 --
+  258, 2002.
+
+\bibitem{2001_bisection}
+K.~Sastry.
+\newblock {\em Evaluation-relaxation schemes for genetic and evolutionary
+  algorithms}.
+\newblock PhD thesis, University of Illinois at Urbana-Champaign, 2001.
+
+\bibitem{2010_LTGA}
+D.~Thierens.
+\newblock Linkage tree genetic algorithm: First results.
+\newblock {\em Proceedings of the 12th Annual Conference Companion on Genetic
+  and Evolutionary Computation}, pages 1953--1958, 2010.
+
+\bibitem{2011_OMEA}
+D.~Thierens and P.~A. Bosman.
+\newblock Optimal mixing evolutionary algorithms.
+\newblock {\em Proceedings of the Genetic and Evolutionary Computation
+  Conference $($GECCO-2011\,$)$}, pages 617--624, 2011.
+
+\bibitem{2013_Hier}
+D.~Thierens and P.~A. Bosman.
+\newblock Hierarchical problem solving with the linkage tree genetic algorithm.
+\newblock {\em Proceedings of the Genetic and Evolutionary Computation
+  Conference $($GECCO-2013\,$)$}, pages 877--884, 2013.
+
+\bibitem{1993_Thierens}
+D.~Thierens and D.~E. Goldberg.
+\newblock Mixing in genetic algorithms.
+\newblock {\em Proceedings of the Fifth International Conference on Genetic
+  Algorithms $($ICGA-1993\,$)$}, pages 38--47, 1993.
+
+\bibitem{2014_CP}
+S.-M. Wang, Y.-F. Tung, and T.-L. Yu.
+\newblock Investigation on efficiency of optimal mixing on various linkage
+  sets.
+\newblock {\em Proceedings of the 2014 IEEE International Conference on
+  Evolutionary Computation}, pages 2475--2482, 2014.
+
+\bibitem{2007_Yu}
+T.-L. Yu, K.~Sastry, D.~E. Goldberg, and M.~Pelikan.
+\newblock Population sizing for entropy-based model building in discrete
+  estimation of distribution algorithms.
+\newblock {\em Proceedings of the Genetic and Evolutionary Computation
+  Conference $($GECCO-2007\,$)$}, pages 601--608, 2007.
+
+\end{thebibliography}
+
+\end{document}
